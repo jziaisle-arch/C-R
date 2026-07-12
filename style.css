@@ -68,10 +68,13 @@ body {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(201, 148, 24, 0.25);
-    padding: 32px;
-    border-radius: 24px;
-    width: 100%;
-    max-width: 420px;
+
+    width: 92%;
+    max-width: 380px; /* was 420px */
+
+    padding: 24px; /* was 32px */
+    border-radius: 20px; /* was 24px */
+
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
 }
 
