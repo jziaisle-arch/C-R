@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C&R Web • Earn</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="background"></div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+
+<div class="dashboard">
+
+    <div class="logo">
+        <div class="logo-icon">₱</div>
+
+        <div>
+            <h1>Cash & Receive Web App</h1>
+            <p>Encode and Earn Real Cash</p>
+        </div>
+    </div>
+
+
+    <div class="progressCard">
+
+        <div class="progressTop">
+            <span>Captcha Progress</span>
+            <span id="progressText">0 / 10</span>
+        </div>
+
+        <div class="progressBar">
+            <div id="progressFill"></div>
+        </div>
+
+    </div>
+
+
+
+    <div class="captchaCard">
+
+        <div class="label">
+            Security Challenge
+        </div>
+
+
+        <div class="captcha" id="captchaDisplay">
+            A7K9X
+        </div>
+
+
+        <div class="input-fixed-container">
+
+            <input 
+            type="text"
+            id="captchaInput"
+            placeholder="Enter captcha characters"
+            autocomplete="off">
+
+        </div>
+
+
+        <button id="captchaSubmitBtn">
+            Verify Code
+        </button>
+
+
+        <div id="message"></div>
+
+    </div>
+
+
+
+
+    <div class="footer-row">
+
+        <div class="earnings">
+
+            <div>
+
+                <div class="small">
+                    CURRENT BALANCE
+                </div>
+
+                <h2 id="balanceDisplay">
+                    ₱0.000
+                </h2>
+
+            </div>
+
+
+            <div class="reward">
+
+                <span>
+                    Reward
+                </span>
+
+                <strong>
+                    ₱1.350
+                </strong>
+
+            </div>
+
+
+        </div>
+
+
+
+        <button 
+        class="info-btn"
+        id="openModalBtn">
+            ☰
+        </button>
+
+
+    </div>
+
+
+</div>
+
+
+
+
+<div class="modal" id="infoModal">
+
+
+<div class="modal-content">
+
+
+<span class="close-btn" id="closeModalBtn">
+    &times;
+</span>
+
+
+
+<div class="modal-scroll-area">
+
+
+
+<div class="accordion-item">
+
+
+<button 
+class="accordion-header active"
+data-tab="detailsTab">
+
+Project Details
+
+</button>
+
+
+
+<div 
+class="accordion-content active"
+id="detailsTab">
+
+
+<ul class="modal-list">
+
+<li>
+<strong>Task Goal:</strong>
+Solve human-verification strings to help secure distributed datasets.
+</li>
+
+
+<li>
+<strong>Captcha Milestone:</strong>
+Complete 10 valid captchas to earn ₱1.350.
+</li>
+
+
+<li>
+<strong>Payout Threshold:</strong>
+Minimum payout requirement applies.
+</li>
+
+
+</ul>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+<div class="accordion-item">
+
+
+<button 
+class="accordion-header"
+data-tab="payoutTab">
+
+Payout Request
+
+</button>
+
+
+
+<div 
+class="accordion-content"
+id="payoutTab">
+
+
+
+<form 
+class="modal-form"
+id="payoutForm"
+onsubmit="return false;">
+
+
+
+<label class="form-label">
+Payment Method
+</label>
+
+
+
+<select id="payoutMethod">
+
+<option value="GCash">
+GCash
+</option>
+
+<option value="Maya">
+Maya
+</option>
+
+
+</select>
+
+
+
+
+
+<label class="form-label">
+Account Number
+</label>
+
+
+<input 
+type="text"
+id="payoutAccount"
+placeholder="09xx xxx xxxx">
+
+
+
+
+
+<label class="form-label">
+Withdrawal Amount (PHP)
+</label>
+
+
+<input 
+type="number"
+id="payoutAmount"
+placeholder="100">
+
+
+
+
+
+<button 
+type="submit"
+id="payoutSubmitBtn">
+
+Submit Request
+
+</button>
+
+
+</form>
+
+
+
+
+<div 
+class="form-status"
+id="payoutStatus">
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+<div class="accordion-item">
+
+
+<button 
+class="accordion-header"
+data-tab="promoTab">
+
+Promo Code
+
+</button>
+
+
+
+<div 
+class="accordion-content"
+id="promoTab">
+
+
+
+<form 
+class="modal-form"
+id="promoForm"
+onsubmit="return false;">
+
+
+
+<label class="form-label">
+Enter Promo Voucher
+</label>
+
+
+
+<input 
+type="text"
+id="promoInput"
+placeholder="Promo Code">
+
+
+
+
+
+<button 
+type="submit"
+id="promoSubmitBtn">
+
+Redeem Voucher
+
+</button>
+
+
+</form>
+
+
+
+
+<div 
+class="form-status"
+id="promoStatus">
+
+</div>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+<div class="accordion-item">
+
+
+<button 
+class="accordion-header"
+data-tab="historyTab">
+
+Transaction History
+
+</button>
+
+
+
+<div 
+class="accordion-content"
+id="historyTab">
+
+
+<div class="history-container">
+
+
+<div 
+class="history-list"
+id="historyList">
+
+
+<div 
+class="empty-history-text"
+id="emptyHistoryText">
+
+No transactions recorded yet.
+
+</div>
+
+
+</div>
+
+
+</div>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+
+<div class="accordion-item">
+
+
+<button 
+class="accordion-header"
+data-tab="contactTab">
+
+Contact Us
+
+</button>
+
+
+
+
+<div 
+class="accordion-content"
+id="contactTab">
+
+
+<h3>
+Contact Us
+</h3>
+
+
+<p class="contact-intro">
+
+Have questions regarding rewards, missing payouts, or account verification issues? Reach out to our support team.
+
+</p>
+
+
+
+<ul class="modal-list">
+
+
+<li>
+<strong>Email:</strong>
+support@crweb-datasets.com
+</li>
+
+
+<li>
+<strong>Telegram:</strong>
+@CRWebEarnOfficial
+</li>
+
+
+<li>
+<strong>Hours:</strong>
+Monday-Friday, 9AM-6PM PHT
+</li>
+
+
+
+</ul>
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+<script src="script.js"></script>
+
+
+</body>
+</html>
