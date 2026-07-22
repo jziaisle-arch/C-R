@@ -1,113 +1,142 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=overlays-content">
-    <title>C&R Web • Earn</title>
-
-    <link rel="stylesheet" href="style.css">
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Imposter Who?</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 </head>
-
 <body>
 
-<div class="background"></div>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="logo-box">
+        <h1>IMPOSTER<br>WHO?</h1>
+      </div>
+      <button id="mute-btn" class="icon-btn" aria-label="Toggle Sound">🔊</button>
+    </header>
 
-<div id="toastContainer" class="toast-container"></div>
-
-
-<div class="dashboard">
-
-    <div class="logo">
-        <div class="logo-icon">₱</div>
-
-        <div>
-            <h1>Cash & Receive Web App</h1>
-            <p>Encode and Earn Real Cash</p>
-        </div>
-    </div>
-
-
-    <div class="progressCard">
-
-        <div class="progressTop">
-            <span>Captcha Progress</span>
-            <span id="progressText">0 / 10</span>
+    <section id="setup-screen" class="card-screen">
+      <div class="setup-scroll-area">
+        <div class="section-card">
+          <div class="section-header-row">
+            <label class="section-title">✋ PLAYERS (<span id="player-count-label">0</span>)</label>
+          </div>
+          <div class="input-with-btn">
+            <input type="text" id="player-name-input" placeholder="Enter player name" maxlength="15">
+            <button id="add-player-btn" class="btn primary-btn-sm">Add</button>
+          </div>
+          <ul id="player-list" class="player-tags"></ul>
         </div>
 
-        <div class="progressBar">
-            <div id="progressFill"></div>
+        <div class="section-card">
+          <label class="section-title">🐔 CATEGORIES</label>
+          <select id="category-select" class="custom-select"></select>
         </div>
 
-    </div>
-
-
-
-    <div class="captchaCard">
-
-        <div class="label">
-            Security Challenge
+        <div class="section-card">
+          <label class="section-title">🥷 IMPOSTERS</label>
+          <select id="impostor-count-select" class="custom-select">
+            <option value="1" selected>1 Imposter</option>
+            <option value="2">2 Imposters</option>
+            <option value="3">3 Imposters</option>
+          </select>
         </div>
 
-
-        <div class="captcha" id="captchaDisplay">
-            A7K9X
-        </div>
-
-
-        <div class="input-fixed-container">
-
-            <input 
-            type="text"
-            id="captchaInput"
-            placeholder="Enter captcha characters"
-            autocomplete="off">
-
-        </div>
-
-
-        <button id="captchaSubmitBtn">
-            Verify Code
-        </button>
-
-
-        <div id="message"></div>
-
-    </div>
-
-
-
-
-    <div class="footer-row">
-
-        <div class="earnings">
-
+        <div class="section-card">
+          <div class="toggle-row" style="margin-bottom: 12px;">
             <div>
-
-                <div class="small">
-                    CURRENT BALANCE
-                </div>
-
-                <h2 id="balanceDisplay">
-                    ₱0.000
-                </h2>
-
+              <label class="section-title">🗳️ ENABLE VOTING PHASE</label>
+              <p class="section-desc">Allow players to vote who the imposter is after discussing.</p>
             </div>
+            <input type="checkbox" id="voting-toggle" class="toggle-switch" checked>
+          </div>
 
+          <div class="toggle-row">
+            <div>
+              <label class="section-title">💡 NO-CLUE MODE</label>
+              <p class="section-desc">Impostors see "???" instead of a clue word.</p>
+            </div>
+            <input type="checkbox" id="no-clue-toggle" class="toggle-switch">
+          </div>
+        </div>
+      </div>
 
-            <div class="reward">
+      <div class="bottom-actions">
+        <button id="start-game-btn" class="btn start-btn" disabled>▶ START GAME</button>
+      </div>
+    </section>
 
-                <span>
-                    Reward
-                </span>
+    <section id="reveal-screen" class="card-screen hidden">
+      <div class="step-indicator">
+        PLAYER <span id="current-player-index">1</span> OF <span id="total-players-index">4</span>
+      </div>
 
-                <strong>
-                    ₱1.350
-                </strong>
+      <div id="hold-card" class="hold-card-container">
+        <div class="hold-card-front">
+          <h2 id="current-player-name" class="player-title">PLAYER</h2>
+          <p class="hold-subtext">Do not tell the word to other players.</p>
+          <div class="hold-icon-wrapper">
+            <span class="hold-icon">👆</span>
+          </div>
+          <p class="hold-instruction">HOLD TO REVEAL</p>
+        </div>
+        
+        <div id="hold-card-back" class="hold-card-back hidden">
+          <p class="word-label">Your secret word is:</p>
+          <h3 id="secret-word-display">WORD</h3>
+        </div>
+      </div>
 
+      <button id="next-player-btn" class="btn start-btn hidden">Next Player</button>
+    </section>
+
+    <section id="starter-screen" class="card-screen hidden">
+      <div class="hold-card-container starter-card">
+        <h2 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 8px;">Who is the Impostor?</h2>
+        <p class="hold-subtext" style="margin-bottom: 16px;">Starts the conversation first:</p>
+        <h1 id="starter-player-name" class="player-title" style="font-size: 2.8rem; color: #1e293b;">-</h1>
+      </div>
+
+      <button id="proceed-btn" class="btn start-btn">Continue</button>
+    </section>
+
+    <section id="voting-screen" class="card-screen hidden">
+      <div class="step-indicator">
+        VOTER <span id="current-voter-index">1</span> OF <span id="total-voters-index">4</span>
+      </div>
+
+      <div class="hold-card-container vote-card">
+        <h2 id="current-voter-name" class="player-title">PLAYER</h2>
+        <p class="hold-subtext">Pass the phone & cast your secret vote!</p>
+        
+        <div class="form-group" style="width: 100%; text-align: left; margin-top: 15px;">
+          <label for="individual-vote-select" style="color: #000; font-weight: 800; font-size: 0.85rem;">WHO IS THE IMPOSTER?</label>
+          <select id="individual-vote-select" class="custom-select light-select"></select>
+        </div>
+      </div>
+
+      <button id="submit-individual-vote-btn" class="btn start-btn">Submit Vote</button>
+    </section>
+
+    <section id="results-screen" class="card-screen hidden">
+      <h2 style="font-weight: 900; color: #1e293b; text-align: center;">GAME SUMMARY</h2>
+      <div id="most-voted-banner" class="most-voted-banner hidden"></div>
+      
+      <button id="show-impostor-btn" class="btn reveal-impostor-btn">🔍 SHOW IMPOSTOR</button>
+      
+      <div id="results-summary" class="results-container hidden"></div>
+      
+      <button id="new-game-btn" class="btn start-btn" style="margin-top: 15px;">Play Again</button>
+    </section>
+  </div>
+
+  <canvas id="confetti-canvas"></canvas>
+  <script src="script.js"></script>
+</body>
+</html>
             </div>
 
 
