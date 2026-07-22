@@ -1,5 +1,5 @@
 /**
- * Imposter Who? - Simplified Logic without Voting + Words in Summary
+ * Imposter Who? - With Pass-The-Phone Privacy Shield
  */
 
 class SoundController {
@@ -51,6 +51,7 @@ let usedWordsHistory = new Set();
 
 // DOM Elements
 const setupScreen = document.getElementById('setup-screen');
+const privacyScreen = document.getElementById('privacy-screen');
 const revealScreen = document.getElementById('reveal-screen');
 const starterScreen = document.getElementById('starter-screen');
 const resultsScreen = document.getElementById('results-screen');
@@ -63,6 +64,10 @@ const playerCountLabel = document.getElementById('player-count-label');
 const impostorCountSelect = document.getElementById('impostor-count-select');
 const startGameBtn = document.getElementById('start-game-btn');
 const noClueToggle = document.getElementById('no-clue-toggle');
+
+const nextUpPlayerName = document.getElementById('next-up-player-name');
+const confirmPlayerBtnName = document.getElementById('confirm-player-btn-name');
+const confirmPassBtn = document.getElementById('confirm-pass-btn');
 
 const currentPlayerName = document.getElementById('current-player-name');
 const secretWordDisplay = document.getElementById('secret-word-display');
@@ -134,6 +139,7 @@ function setupEventListeners() {
   });
 
   startGameBtn.addEventListener('click', startGame);
+  confirmPassBtn.addEventListener('click', showRevealCardScreen);
   nextPlayerBtn.addEventListener('click', advanceRevealScreen);
   proceedBtn.addEventListener('click', handleProceedFromStarter);
   showImpostorBtn.addEventListener('click', revealImpostors);
@@ -244,8 +250,22 @@ function startGame() {
 
   currentRevealIndex = 0;
   setupScreen.classList.add('hidden');
-  revealScreen.classList.remove('hidden');
+  showPrivacyPassScreen();
+}
+
+function showPrivacyPassScreen() {
+  const currentPlayer = assignedRoles[currentRevealIndex];
+  nextUpPlayerName.textContent = currentPlayer.name;
+  confirmPlayerBtnName.textContent = currentPlayer.name;
   
+  revealScreen.classList.add('hidden');
+  privacyScreen.classList.remove('hidden');
+}
+
+function showRevealCardScreen() {
+  audio.playClick();
+  privacyScreen.classList.add('hidden');
+  revealScreen.classList.remove('hidden');
   updateRevealCard();
 }
 
@@ -298,7 +318,7 @@ function advanceRevealScreen() {
   currentRevealIndex++;
 
   if (currentRevealIndex < assignedRoles.length) {
-    updateRevealCard();
+    showPrivacyPassScreen();
   } else {
     revealScreen.classList.add('hidden');
     showStarterScreen();
