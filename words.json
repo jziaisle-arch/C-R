@@ -93,7 +93,9 @@
     { "civilian": "Rice", "impostor": "Bread" },
     { "civilian": "Milk", "impostor": "Water" },
     { "civilian": "Jam", "impostor": "Honey" },
-    { "civilian": "Juice", "impostor": "Water" }
+    { "civilian": "Juice", "impostor": "Water" },
+    { "civilian": "Spaghetti", "impostor": "Carbonara" },
+    { "civilian": "Biscuit", "impostor": "Bread" }
   ],
   "Technology": [
     { "civilian": "Laptop", "impostor": "Tablet" },
@@ -125,7 +127,8 @@
     { "civilian": "Screen", "impostor": "Display" },
     { "civilian": "Speaker", "impostor": "Radio" },
     { "civilian": "Controller", "impostor": "Button" },
-    { "civilian": "Cable", "impostor": "Cord" }
+    { "civilian": "Cable", "impostor": "Cord" },
+    { "civilian": "Android", "impostor": "iPhone" }
   ],
   "Movies & Pop Culture": [
     { "civilian": "Superhero", "impostor": "Villain" },
