@@ -1,361 +1,457 @@
-document.addEventListener("DOMContentLoaded", () => {
+/**
+ * Imposter Who? - Core Logic with 0.005 Special Round Probability
+ */
 
-    // --- UI ELEMENTS ---
-    const infoModal = document.getElementById("infoModal");
-    const openModalBtn = document.getElementById("openModalBtn");
-    const closeModalBtn = document.getElementById("closeModalBtn");
+class SoundController {
+  constructor() {
+    this.ctx = null;
+    this.muted = false;
+  }
 
-    const accordionHeaders = document.querySelectorAll(".accordion-header");
-    const accordionContents = document.querySelectorAll(".accordion-content");
+  init() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }
 
-    const balanceDisplay = document.getElementById("balanceDisplay");
+  playTone(freq, duration, type = 'sine') {
+    if (this.muted) return;
+    this.init();
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + duration);
+    } catch (e) { console.error(e); }
+  }
 
-    const captchaDisplay = document.getElementById("captchaDisplay");
-    const captchaInput = document.getElementById("captchaInput");
-    const captchaSubmitBtn = document.getElementById("captchaSubmitBtn");
+  playClick() { this.playTone(600, 0.05, 'triangle'); }
+  playReveal() { 
+    this.playTone(400, 0.1, 'sine');
+    setTimeout(() => this.playTone(800, 0.2, 'sine'), 100);
+  }
+}
 
-    const progressFill = document.getElementById("progressFill");
-    const progressText = document.getElementById("progressText");
+const audio = new SoundController();
 
-    const message = document.getElementById("message");
+// Game State
+let categoriesData = {};
+let players = [];
+let assignedRoles = [];
+let currentRevealIndex = 0;
 
-    const promoInput = document.getElementById("promoInput");
-    const promoSubmitBtn = document.getElementById("promoSubmitBtn");
-    const promoStatus = document.getElementById("promoStatus");
+let currentVoterIndex = 0;
+let voteTallies = {};
+let votingEnabled = true;
 
-    const payoutMethod = document.getElementById("payoutMethod");
-    const payoutAccount = document.getElementById("payoutAccount");
-    const payoutAmount = document.getElementById("payoutAmount");
-    const payoutSubmitBtn = document.getElementById("payoutSubmitBtn");
-    const payoutStatus = document.getElementById("payoutStatus");
+// DOM Elements
+const setupScreen = document.getElementById('setup-screen');
+const revealScreen = document.getElementById('reveal-screen');
+const starterScreen = document.getElementById('starter-screen');
+const votingScreen = document.getElementById('voting-screen');
+const resultsScreen = document.getElementById('results-screen');
 
-    const historyList = document.getElementById("historyList");
-    const emptyHistoryText = document.getElementById("emptyHistoryText");
+const categorySelect = document.getElementById('category-select');
+const playerNameInput = document.getElementById('player-name-input');
+const addPlayerBtn = document.getElementById('add-player-btn');
+const playerList = document.getElementById('player-list');
+const playerCountLabel = document.getElementById('player-count-label');
+const impostorCountSelect = document.getElementById('impostor-count-select');
+const startGameBtn = document.getElementById('start-game-btn');
+const votingToggle = document.getElementById('voting-toggle');
+const noClueToggle = document.getElementById('no-clue-toggle');
 
-    const toastContainer = document.getElementById("toastContainer");
+const currentPlayerName = document.getElementById('current-player-name');
+const secretWordDisplay = document.getElementById('secret-word-display');
+const currentPlayerIndex = document.getElementById('current-player-index');
+const totalPlayersIndex = document.getElementById('total-players-index');
+const nextPlayerBtn = document.getElementById('next-player-btn');
 
+const starterPlayerName = document.getElementById('starter-player-name');
+const proceedBtn = document.getElementById('proceed-btn');
 
-    // --- SAVED DATA ---
-    let currentBalance = Number(localStorage.getItem("balance")) || 0.000;
-    let captchaCount = Number(localStorage.getItem("captchaCount")) || 0;
-    let isPromoRedeemed = localStorage.getItem("promoRedeemed") === "true";
-    let historyData = JSON.parse(localStorage.getItem("history")) || [];
+const currentVoterName = document.getElementById('current-voter-name');
+const currentVoterIndexEl = document.getElementById('current-voter-index');
+const totalVotersIndexEl = document.getElementById('total-voters-index');
+const individualVoteSelect = document.getElementById('individual-vote-select');
+const submitIndividualVoteBtn = document.getElementById('submit-individual-vote-btn');
 
-    const maxCaptchas = 10;
+const resultsSummary = document.getElementById('results-summary');
+const mostVotedBanner = document.getElementById('most-voted-banner');
+const showImpostorBtn = document.getElementById('show-impostor-btn');
+const newGameBtn = document.getElementById('new-game-btn');
+const muteBtn = document.getElementById('mute-btn');
 
-    function saveData(){
-        localStorage.setItem("balance", currentBalance);
-        localStorage.setItem("captchaCount", captchaCount);
-        localStorage.setItem("promoRedeemed", isPromoRedeemed);
-        localStorage.setItem("history", JSON.stringify(historyData));
+window.addEventListener('DOMContentLoaded', async () => {
+  loadSavedPlayers();
+  await fetchWords();
+  setupEventListeners();
+  setupHoldCard();
+  updatePlayerUI();
+});
+
+async function fetchWords() {
+  try {
+    const res = await fetch('words.json');
+    categoriesData = await res.json();
+    populateCategories();
+  } catch (e) {
+    console.error('Error loading JSON data:', e);
+  }
+}
+
+function populateCategories() {
+  categorySelect.innerHTML = '';
+  
+  const allOpt = document.createElement('option');
+  allOpt.value = "ALL";
+  allOpt.textContent = "✨ All Categories Combined";
+  categorySelect.appendChild(allOpt);
+
+  Object.keys(categoriesData).forEach(cat => {
+    const opt = document.createElement('option');
+    opt.value = cat;
+    opt.textContent = cat;
+    categorySelect.appendChild(opt);
+  });
+}
+
+function setupEventListeners() {
+  muteBtn.addEventListener('click', () => {
+    audio.muted = !audio.muted;
+    muteBtn.textContent = audio.muted ? '🔇' : '🔊';
+  });
+
+  addPlayerBtn.addEventListener('click', addPlayer);
+  playerNameInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') addPlayer();
+  });
+
+  startGameBtn.addEventListener('click', startGame);
+  nextPlayerBtn.addEventListener('click', advanceRevealScreen);
+  proceedBtn.addEventListener('click', handleProceedFromStarter);
+  submitIndividualVoteBtn.addEventListener('click', handleIndividualVoteSubmit);
+  showImpostorBtn.addEventListener('click', revealImpostors);
+  newGameBtn.addEventListener('click', resetToSetup);
+}
+
+function addPlayer() {
+  const name = playerNameInput.value.trim();
+  if (name && !players.includes(name)) {
+    players.push(name);
+    playerNameInput.value = '';
+    savePlayers();
+    updatePlayerUI();
+    audio.playClick();
+  }
+}
+
+function removePlayer(name) {
+  players = players.filter(p => p !== name);
+  savePlayers();
+  updatePlayerUI();
+  audio.playClick();
+}
+
+function updatePlayerUI() {
+  playerList.innerHTML = '';
+  players.forEach(p => {
+    const li = document.createElement('li');
+    li.className = 'player-tag';
+    li.innerHTML = `${p} <button onclick="removePlayer('${p}')">&times;</button>`;
+    playerList.appendChild(li);
+  });
+  
+  playerCountLabel.textContent = players.length;
+  startGameBtn.disabled = players.length < 3;
+}
+
+function savePlayers() {
+  localStorage.setItem('game_players', JSON.stringify(players));
+}
+
+function loadSavedPlayers() {
+  const saved = localStorage.getItem('game_players');
+  if (saved) players = JSON.parse(saved);
+}
+
+function startGame() {
+  audio.playClick();
+  votingEnabled = votingToggle.checked;
+  const selectedCat = categorySelect.value;
+  
+  let wordList = [];
+  if (selectedCat === "ALL") {
+    Object.values(categoriesData).forEach(pairs => {
+      wordList = wordList.concat(pairs);
+    });
+  } else {
+    wordList = categoriesData[selectedCat];
+  }
+
+  const defaultPair = wordList[Math.floor(Math.random() * wordList.length)];
+  const selectedImpostors = parseInt(impostorCountSelect.value, 10);
+  const noClueMode = noClueToggle.checked;
+
+  const impostorIndices = new Set();
+
+  // SPECIAL / TROLL ROUND PROBABILITY SET TO EXACTLY 0.005 (0.5%)
+  const isSpecialRound = Math.random() < 0.005;
+  let isTrollRound = false;
+
+  if (isSpecialRound) {
+    if (Math.random() < 0.5) {
+      isTrollRound = true;
+      players.forEach((_, idx) => impostorIndices.add(idx));
+    } else {
+      impostorIndices.clear();
+    }
+  } else {
+    while (impostorIndices.size < Math.min(selectedImpostors, players.length)) {
+      impostorIndices.add(Math.floor(Math.random() * players.length));
+    }
+  }
+
+  const availableImpostorWords = wordList
+    .map(pair => pair.impostor)
+    .sort(() => Math.random() - 0.5);
+
+  assignedRoles = players.map((player, idx) => {
+    const isImpostor = impostorIndices.has(idx);
+    let word = defaultPair.civilian;
+
+    if (isTrollRound) {
+      const uniqueWord = availableImpostorWords[idx % availableImpostorWords.length];
+      word = noClueMode ? "???" : uniqueWord;
+    } else if (isImpostor) {
+      word = noClueMode ? "???" : defaultPair.impostor;
     }
 
-    // --- TOAST SYSTEM ---
-    function triggerToast(text, type = "info"){
-        if(!toastContainer) return;
+    return { name: player, word: word, isImpostor: isImpostor };
+  });
 
-        const toast = document.createElement("div");
-        toast.className = `toast ${type}`;
-        toast.innerHTML = `
-            <span class="toast-icon">
-            ${
-                type === "success" ? "☑" :
-                type === "error" ? "☒" :
-                type === "warning" ? "⚠︎" : ""
-            }
-            </span>
-            <span>${text}</span>
-        `;
+  currentRevealIndex = 0;
+  setupScreen.classList.add('hidden');
+  revealScreen.classList.remove('hidden');
+  
+  updateRevealCard();
+}
 
-        toastContainer.appendChild(toast);
+function setupHoldCard() {
+  const holdCard = document.getElementById('hold-card');
+  const cardFront = holdCard.querySelector('.hold-card-front');
+  const cardBack = document.getElementById('hold-card-back');
 
-        setTimeout(() => {
-            toast.classList.add("show");
-        }, 50);
+  const startHold = (e) => {
+    e.preventDefault();
+    audio.playReveal();
+    cardFront.classList.add('hidden');
+    cardBack.classList.remove('hidden');
+    nextPlayerBtn.classList.remove('hidden');
+  };
 
-        setTimeout(() => {
-            toast.classList.remove("show");
-            setTimeout(() => {
-                toast.remove();
-            }, 300);
-        }, 3500);
+  const endHold = (e) => {
+    e.preventDefault();
+    cardFront.classList.remove('hidden');
+    cardBack.classList.add('hidden');
+  };
+
+  holdCard.addEventListener('mousedown', startHold);
+  holdCard.addEventListener('mouseup', endHold);
+  holdCard.addEventListener('mouseleave', endHold);
+
+  holdCard.addEventListener('touchstart', startHold, { passive: false });
+  holdCard.addEventListener('touchend', endHold, { passive: false });
+}
+
+function updateRevealCard() {
+  const currentPlayer = assignedRoles[currentRevealIndex];
+  currentPlayerName.textContent = currentPlayer.name;
+  secretWordDisplay.textContent = currentPlayer.word;
+
+  currentPlayerIndex.textContent = currentRevealIndex + 1;
+  totalPlayersIndex.textContent = assignedRoles.length;
+  
+  if (currentRevealIndex === assignedRoles.length - 1) {
+    nextPlayerBtn.textContent = "Start Discussion";
+  } else {
+    nextPlayerBtn.textContent = "Next Player";
+  }
+
+  nextPlayerBtn.classList.add('hidden');
+}
+
+function advanceRevealScreen() {
+  audio.playClick();
+  currentRevealIndex++;
+
+  if (currentRevealIndex < assignedRoles.length) {
+    updateRevealCard();
+  } else {
+    revealScreen.classList.add('hidden');
+    showStarterScreen();
+  }
+}
+
+function showStarterScreen() {
+  const randomStarter = players[Math.floor(Math.random() * players.length)];
+  starterPlayerName.textContent = randomStarter;
+  starterScreen.classList.remove('hidden');
+}
+
+function handleProceedFromStarter() {
+  audio.playClick();
+  starterScreen.classList.add('hidden');
+
+  if (votingEnabled) {
+    votingScreen.classList.remove('hidden');
+    startIndividualVoting();
+  } else {
+    showResults(false);
+  }
+}
+
+function startIndividualVoting() {
+  currentVoterIndex = 0;
+  voteTallies = {};
+  players.forEach(p => voteTallies[p] = 0);
+  updateIndividualVoterCard();
+}
+
+function updateIndividualVoterCard() {
+  const voter = players[currentVoterIndex];
+  currentVoterName.textContent = voter;
+  
+  currentVoterIndexEl.textContent = currentVoterIndex + 1;
+  totalVotersIndexEl.textContent = players.length;
+
+  individualVoteSelect.innerHTML = '';
+  players.forEach(target => {
+    if (target !== voter) {
+      const opt = document.createElement('option');
+      opt.value = target;
+      opt.textContent = target;
+      individualVoteSelect.appendChild(opt);
     }
+  });
+}
 
-    // --- PHONE FORMATTER ---
-    if(payoutAccount){
-        payoutAccount.addEventListener("input", () => {
-            let value = payoutAccount.value.replace(/\D/g, "");
-            value = value.substring(0, 11);
+function handleIndividualVoteSubmit() {
+  audio.playClick();
+  const selectedTarget = individualVoteSelect.value;
+  
+  if (selectedTarget) {
+    voteTallies[selectedTarget] = (voteTallies[selectedTarget] || 0) + 1;
+  }
 
-            if(value.length > 7){
-                value = value.substring(0, 4) + " " + value.substring(4, 7) + " " + value.substring(7);
-            } else if(value.length > 4){
-                value = value.substring(0, 4) + " " + value.substring(4);
-            }
-            payoutAccount.value = value;
-        });
-    }
-    
-    function fetchCurrentTime(){
-        return new Date().toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: true
-        });
-    }
+  currentVoterIndex++;
 
-    // --- TRANSACTION HISTORY ENGINE ---
-    // Added an appendToStorage flag to prevent duplicate record multiplication during page reload loops
-    function processHistoryStack(title, time, value, mode, status, appendToStorage = true){
-        if(emptyHistoryText){
-            emptyHistoryText.style.display = "none";
-        }
+  if (currentVoterIndex < players.length) {
+    updateIndividualVoterCard();
+  } else {
+    showResults(true);
+  }
+}
 
-        if(!historyList) return;
+function showResults(hasVoted = true) {
+  votingScreen.classList.add('hidden');
+  resultsScreen.classList.remove('hidden');
 
-        const row = document.createElement("div");
-        row.className = "history-item";
-        row.innerHTML = `
-            <div class="history-meta">
-                <h4>${title}</h4>
-                <span>Time: ${time}</span>
-            </div>
-            <div class="history-value">
-                <span class="history-amt ${mode}">
-                    ${mode === "minus" ? "-" : "+"}₱${Number(value).toFixed(3)}
-                </span>
-                <span class="history-status ${status.toLowerCase()}">${status}</span>
-            </div>
-        `;
+  showImpostorBtn.classList.remove('hidden');
+  resultsSummary.classList.add('hidden');
+  mostVotedBanner.classList.add('hidden');
 
-        historyList.prepend(row);
+  if (hasVoted) {
+    let maxVotes = -1;
+    let mostVotedPlayers = [];
 
-        if (appendToStorage) {
-            historyData.unshift({
-                title: title,
-                time: time,
-                value: value,
-                mode: mode,
-                status: status
-            });
-            saveData();
-        }
-    }
-
-    // --- LOAD OLD HISTORY CORRECTLY ---
-    if(historyData.length > 0 && emptyHistoryText) {
-        emptyHistoryText.style.display = "none";
-    }
-    // Read array backwards to prepend them in the exact, correct structural order
-    for(let i = historyData.length - 1; i >= 0; i--) {
-        processHistoryStack(
-            historyData[i].title,
-            historyData[i].time,
-            historyData[i].value,
-            historyData[i].mode,
-            historyData[i].status,
-            false // DO NOT write back to array during render loop
-        );
-    }
-
-    // --- MODAL CONTROLS ---
-    if(openModalBtn && infoModal){
-        openModalBtn.onclick = (e) => {
-            e.preventDefault();
-            infoModal.classList.add("open");
-        };
-    }
-
-    if(closeModalBtn && infoModal){
-        closeModalBtn.onclick = (e) => {
-            e.preventDefault();
-            infoModal.classList.remove("open");
-        };
-    }
-
-    window.onclick = (e) => {
-        if(e.target === infoModal){
-            infoModal.classList.remove("open");
-        }
-    };
-
-    // --- ACCORDION CODES ---
-    accordionHeaders.forEach(header => {
-        header.addEventListener("click", e => {
-            e.preventDefault();
-            const targetId = header.getAttribute("data-tab");
-            const target = document.getElementById(targetId);
-
-            accordionHeaders.forEach(h => h.classList.remove("active"));
-            accordionContents.forEach(c => c.classList.remove("active"));
-
-            header.classList.add("active");
-            if(target) target.classList.add("active");
-        });
+    Object.entries(voteTallies).forEach(([player, count]) => {
+      if (count > maxVotes) {
+        maxVotes = count;
+        mostVotedPlayers = [player];
+      } else if (count === maxVotes && count > 0) {
+        mostVotedPlayers.push(player);
+      }
     });
 
-    // --- CAPTCHA GENERATOR ---
-    function generateCaptcha(){
-        if(!captchaDisplay) return;
-        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        let result = "";
-        for(let i = 0; i < 5; i++){
-            result += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        captchaDisplay.textContent = result;
+    mostVotedBanner.classList.remove('hidden');
+    if (mostVotedPlayers.length === 1 && maxVotes > 0) {
+      mostVotedBanner.textContent = `Most Voted Out: ${mostVotedPlayers[0]} (${maxVotes} votes)`;
+    } else if (mostVotedPlayers.length > 1 && maxVotes > 0) {
+      mostVotedBanner.textContent = `Tied Votes: ${mostVotedPlayers.join(', ')} (${maxVotes} votes each)`;
+    } else {
+      mostVotedBanner.textContent = `No votes were cast!`;
     }
+  }
 
-    // --- CAPTCHA VERIFY ---
-    if(captchaSubmitBtn){
-        captchaSubmitBtn.onclick = e => {
-            e.preventDefault();
-            const input = captchaInput.value.trim().toUpperCase();
-            const correct = captchaDisplay.textContent;
+  resultsSummary.innerHTML = '';
+  assignedRoles.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'result-row';
+    const roleClass = r.isImpostor ? 'role-impostor' : 'role-civilian';
+    const roleText = r.isImpostor ? 'Imposter' : 'Civilian';
 
-            if(input === correct){
-                captchaCount++;
-                if(message) message.textContent = "☑ Correct Captcha";
+    row.innerHTML = `
+      <span>${r.name}</span> 
+      <span class="role-badge ${roleClass}">${roleText}</span>
+    `;
+    resultsSummary.appendChild(row);
+  });
+}
 
-                if(captchaCount >= maxCaptchas){
-                    currentBalance += 1.350;
-                    captchaCount = 0;
+function revealImpostors() {
+  audio.playClick();
+  showImpostorBtn.classList.add('hidden');
+  resultsSummary.classList.remove('hidden');
+  triggerConfetti();
+}
 
-                    processHistoryStack(
-                        "Captcha Milestone",
-                        fetchCurrentTime(),
-                        1.350,
-                        "plus",
-                        "COMPLETED"
-                    );
+function resetToSetup() {
+  audio.playClick();
+  resultsScreen.classList.add('hidden');
+  setupScreen.classList.remove('hidden');
+}
 
-                    triggerToast("Milestone Complete! +₱1.350", "success");
-                } else {
-                }
+function triggerConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 
-                saveData();
+  const particles = Array.from({ length: 80 }).map(() => ({
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    vx: (Math.random() - 0.5) * 12,
+    vy: (Math.random() - 0.5) * 12 - 4,
+    color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+    size: Math.random() * 6 + 4,
+    life: 100
+  }));
 
-                if(balanceDisplay){
-                    balanceDisplay.textContent = `₱${currentBalance.toFixed(3)}`;
-                }
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let active = false;
 
-                if(progressFill){
-                    progressFill.style.width = `${(captchaCount / maxCaptchas) * 100}%`;
-                }
+    particles.forEach(p => {
+      if (p.life > 0) {
+        active = true;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.2;
+        p.life -= 1;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.size, p.size);
+      }
+    });
 
-                if(progressText){
-                    progressText.textContent = `${captchaCount} / ${maxCaptchas}`;
-                }
+    if (active) requestAnimationFrame(render);
+  }
 
-                captchaInput.value = "";
-                generateCaptcha();
-            } else {
-                if(message) {
-                    message.textContent = "☒ Incorrect Captcha";
-                }
-            }
-        };
-    }
-
-    if(captchaInput){
-        captchaInput.addEventListener("keydown", e => {
-            if(e.key === "Enter"){
-                e.preventDefault();
-                if(captchaSubmitBtn) captchaSubmitBtn.click();
-            }
-        });
-    }
-    
-    // --- PROMO CODE SYSTEM ---
-    if(promoSubmitBtn){
-        promoSubmitBtn.onclick = e => {
-            e.preventDefault();
-            const code = promoInput.value.trim().toUpperCase();
-
-            if(code === "4F82I5RQ"){
-                if(isPromoRedeemed){
-                    if(promoStatus) promoStatus.textContent = "This voucher has already been claimed.";
-                    return;
-                }
-
-                currentBalance += 200;
-                isPromoRedeemed = true;
-                saveData();
-
-                if(balanceDisplay) balanceDisplay.textContent = `₱${currentBalance.toFixed(3)}`;
-
-                processHistoryStack(
-                    "Promo: 4F82I5RQ",
-                    fetchCurrentTime(),
-                    200,
-                    "plus",
-                    "COMPLETED"
-                );
-
-                if(promoStatus) promoStatus.textContent = "Voucher successfully applied!";
-                triggerToast("Promo +₱200.00 added", "success");
-                promoInput.value = "";
-            } else {
-                if(promoStatus) promoStatus.textContent = "Invalid promo code.";
-            }
-        };
-    }
-
-    // --- PAYOUT SYSTEM ---
-    if(payoutSubmitBtn){
-        payoutSubmitBtn.onclick = e => {
-            e.preventDefault();
-            const method = payoutMethod.value;
-            const account = payoutAccount.value.trim();
-            const amount = Number(payoutAmount.value);
-
-            if(!method || !account || isNaN(amount) || amount <= 0){
-                if(payoutStatus) payoutStatus.textContent = "Please complete all fields.";
-                return;
-            }
-
-            if(amount < 100){
-                if(payoutStatus) payoutStatus.textContent = "Minimum payout is ₱100.";
-                return;
-            }
-
-            if(amount > currentBalance){
-                if(payoutStatus) payoutStatus.textContent = "Insufficient funds.";
-                return;
-            }
-
-            const cleanAccount = account.replace(/\s/g, "");
-            currentBalance -= amount;
-            saveData();
-
-            if(balanceDisplay) balanceDisplay.textContent = `₱${currentBalance.toFixed(3)}`;
-            if(payoutStatus) payoutStatus.textContent = "";
-
-            processHistoryStack(
-                `Payout (${method})`,
-                fetchCurrentTime(),
-                amount,
-                "minus",
-                "PENDING"
-            );
-
-            triggerToast(`Payout ₱${amount.toFixed(2)} success!`, "success");
-
-            console.log({
-                method,
-                account: cleanAccount,
-                amount
-            });
-
-            payoutAccount.value = "";
-            payoutAmount.value = "";
-        };
-    }
-
-    // --- INITIAL LAYOUT LOAD ---
-    if(balanceDisplay) balanceDisplay.textContent = `₱${currentBalance.toFixed(3)}`;
-    if(progressText) progressText.textContent = `${captchaCount} / ${maxCaptchas}`;
-    if(progressFill) progressFill.style.width = `${(captchaCount / maxCaptchas) * 100}%`;
-
-    generateCaptcha();
-});
+  render();
+                  }
