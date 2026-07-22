@@ -1,5 +1,5 @@
 /**
- * Imposter Who? - Complete Logic with Refresh Preventer Guard
+ * Imposter Who? - Simplified Logic without Voting + Words in Summary
  */
 
 class SoundController {
@@ -45,19 +45,14 @@ let categoriesData = {};
 let players = [];
 let assignedRoles = [];
 let currentRevealIndex = 0;
+let isGameInProgress = false;
 
-let currentVoterIndex = 0;
-let voteTallies = {};
-let votingEnabled = true;
-let isGameInProgress = false; // Flag para sa Refresh Preventer
-
-let usedWordsHistory = new Set(); // History tracker para walang ulitan
+let usedWordsHistory = new Set();
 
 // DOM Elements
 const setupScreen = document.getElementById('setup-screen');
 const revealScreen = document.getElementById('reveal-screen');
 const starterScreen = document.getElementById('starter-screen');
-const votingScreen = document.getElementById('voting-screen');
 const resultsScreen = document.getElementById('results-screen');
 
 const categorySelect = document.getElementById('category-select');
@@ -67,7 +62,6 @@ const playerList = document.getElementById('player-list');
 const playerCountLabel = document.getElementById('player-count-label');
 const impostorCountSelect = document.getElementById('impostor-count-select');
 const startGameBtn = document.getElementById('start-game-btn');
-const votingToggle = document.getElementById('voting-toggle');
 const noClueToggle = document.getElementById('no-clue-toggle');
 
 const currentPlayerName = document.getElementById('current-player-name');
@@ -79,14 +73,7 @@ const nextPlayerBtn = document.getElementById('next-player-btn');
 const starterPlayerName = document.getElementById('starter-player-name');
 const proceedBtn = document.getElementById('proceed-btn');
 
-const currentVoterName = document.getElementById('current-voter-name');
-const currentVoterIndexEl = document.getElementById('current-voter-index');
-const totalVotersIndexEl = document.getElementById('total-voters-index');
-const individualVoteSelect = document.getElementById('individual-vote-select');
-const submitIndividualVoteBtn = document.getElementById('submit-individual-vote-btn');
-
 const resultsSummary = document.getElementById('results-summary');
-const mostVotedBanner = document.getElementById('most-voted-banner');
 const showImpostorBtn = document.getElementById('show-impostor-btn');
 const newGameBtn = document.getElementById('new-game-btn');
 const muteBtn = document.getElementById('mute-btn');
@@ -96,15 +83,13 @@ window.addEventListener('DOMContentLoaded', async () => {
   await fetchWords();
   setupEventListeners();
   setupHoldCard();
-  setupRefreshPreventer(); // I-initialize ang Refresh Preventer
+  setupRefreshPreventer();
   updatePlayerUI();
 });
 
-/* REFRESH PREVENTER FUNCTION */
 function setupRefreshPreventer() {
   window.addEventListener('beforeunload', (e) => {
     if (isGameInProgress) {
-      // Pinipigilan ang pag-refresh kapag ongoing ang laro
       e.preventDefault();
       e.returnValue = ''; 
     }
@@ -151,7 +136,6 @@ function setupEventListeners() {
   startGameBtn.addEventListener('click', startGame);
   nextPlayerBtn.addEventListener('click', advanceRevealScreen);
   proceedBtn.addEventListener('click', handleProceedFromStarter);
-  submitIndividualVoteBtn.addEventListener('click', handleIndividualVoteSubmit);
   showImpostorBtn.addEventListener('click', revealImpostors);
   newGameBtn.addEventListener('click', resetToSetup);
 }
@@ -198,9 +182,8 @@ function loadSavedPlayers() {
 
 function startGame() {
   audio.playClick();
-  isGameInProgress = true; // I-activate ang Refresh Guard
+  isGameInProgress = true;
 
-  votingEnabled = votingToggle.checked;
   const selectedCat = categorySelect.value;
   
   let wordList = [];
@@ -212,7 +195,6 @@ function startGame() {
     wordList = categoriesData[selectedCat] || [];
   }
 
-  // Filter out used words
   let unusedWords = wordList.filter(pair => !usedWordsHistory.has(pair.civilian));
   if (unusedWords.length === 0) {
     usedWordsHistory.clear();
@@ -332,87 +314,14 @@ function showStarterScreen() {
 function handleProceedFromStarter() {
   audio.playClick();
   starterScreen.classList.add('hidden');
-
-  if (votingEnabled) {
-    votingScreen.classList.remove('hidden');
-    startIndividualVoting();
-  } else {
-    showResults(false);
-  }
+  showResults();
 }
 
-function startIndividualVoting() {
-  currentVoterIndex = 0;
-  voteTallies = {};
-  players.forEach(p => voteTallies[p] = 0);
-  updateIndividualVoterCard();
-}
-
-function updateIndividualVoterCard() {
-  const voter = players[currentVoterIndex];
-  currentVoterName.textContent = voter;
-  
-  currentVoterIndexEl.textContent = currentVoterIndex + 1;
-  totalVotersIndexEl.textContent = players.length;
-
-  individualVoteSelect.innerHTML = '';
-  players.forEach(target => {
-    if (target !== voter) {
-      const opt = document.createElement('option');
-      opt.value = target;
-      opt.textContent = target;
-      individualVoteSelect.appendChild(opt);
-    }
-  });
-}
-
-function handleIndividualVoteSubmit() {
-  audio.playClick();
-  const selectedTarget = individualVoteSelect.value;
-  
-  if (selectedTarget) {
-    voteTallies[selectedTarget] = (voteTallies[selectedTarget] || 0) + 1;
-  }
-
-  currentVoterIndex++;
-
-  if (currentVoterIndex < players.length) {
-    updateIndividualVoterCard();
-  } else {
-    showResults(true);
-  }
-}
-
-function showResults(hasVoted = true) {
-  votingScreen.classList.add('hidden');
+function showResults() {
   resultsScreen.classList.remove('hidden');
 
   showImpostorBtn.classList.remove('hidden');
   resultsSummary.classList.add('hidden');
-  mostVotedBanner.classList.add('hidden');
-
-  if (hasVoted) {
-    let maxVotes = -1;
-    let mostVotedPlayers = [];
-
-    Object.entries(voteTallies).forEach(([player, count]) => {
-      if (count > maxVotes) {
-        maxVotes = count;
-        mostVotedPlayers = [player];
-      } else if (count === maxVotes && count > 0) {
-        mostVotedPlayers.push(player);
-      }
-    });
-
-    mostVotedBanner.classList.remove('hidden');
-    if (mostVotedPlayers.length === 1 && maxVotes > 0) {
-      mostVotedBanner.textContent = `Most Voted Out: ${mostVotedPlayers[0]} (${maxVotes} votes)`;
-    } else if (mostVotedPlayers.length > 1 && maxVotes > 0) {
-      mostVotedBanner.textContent = `Tied Votes: ${mostVotedPlayers.join(', ')} (${maxVotes} votes each)`;
-    } else {
-      mostVotedBanner.textContent = `No votes were cast!`;
-    }
-  }
 
   resultsSummary.innerHTML = '';
   assignedRoles.forEach(r => {
@@ -422,7 +331,10 @@ function showResults(hasVoted = true) {
     const roleText = r.isImpostor ? 'Imposter' : 'Civilian';
 
     row.innerHTML = `
-      <span>${r.name}</span> 
+      <div>
+        <strong>${r.name}</strong>
+        <div style="font-size: 0.8rem; color: #64748b; font-weight: 600;">Word: ${r.word}</div>
+      </div>
       <span class="role-badge ${roleClass}">${roleText}</span>
     `;
     resultsSummary.appendChild(row);
@@ -438,7 +350,7 @@ function revealImpostors() {
 
 function resetToSetup() {
   audio.playClick();
-  isGameInProgress = false; // I-off ang Refresh Guard kapag bumalik sa setup
+  isGameInProgress = false;
   resultsScreen.classList.add('hidden');
   setupScreen.classList.remove('hidden');
 }
