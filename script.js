@@ -1,5 +1,5 @@
 /**
- * Imposter Who? - Core Logic with 0.005 Special Round Probability
+ * Imposter Who? - Complete Logic with Refresh Preventer Guard
  */
 
 class SoundController {
@@ -49,6 +49,9 @@ let currentRevealIndex = 0;
 let currentVoterIndex = 0;
 let voteTallies = {};
 let votingEnabled = true;
+let isGameInProgress = false; // Flag para sa Refresh Preventer
+
+let usedWordsHistory = new Set(); // History tracker para walang ulitan
 
 // DOM Elements
 const setupScreen = document.getElementById('setup-screen');
@@ -93,8 +96,20 @@ window.addEventListener('DOMContentLoaded', async () => {
   await fetchWords();
   setupEventListeners();
   setupHoldCard();
+  setupRefreshPreventer(); // I-initialize ang Refresh Preventer
   updatePlayerUI();
 });
+
+/* REFRESH PREVENTER FUNCTION */
+function setupRefreshPreventer() {
+  window.addEventListener('beforeunload', (e) => {
+    if (isGameInProgress) {
+      // Pinipigilan ang pag-refresh kapag ongoing ang laro
+      e.preventDefault();
+      e.returnValue = ''; 
+    }
+  });
+}
 
 async function fetchWords() {
   try {
@@ -183,6 +198,8 @@ function loadSavedPlayers() {
 
 function startGame() {
   audio.playClick();
+  isGameInProgress = true; // I-activate ang Refresh Guard
+
   votingEnabled = votingToggle.checked;
   const selectedCat = categorySelect.value;
   
@@ -192,16 +209,23 @@ function startGame() {
       wordList = wordList.concat(pairs);
     });
   } else {
-    wordList = categoriesData[selectedCat];
+    wordList = categoriesData[selectedCat] || [];
   }
 
-  const defaultPair = wordList[Math.floor(Math.random() * wordList.length)];
+  // Filter out used words
+  let unusedWords = wordList.filter(pair => !usedWordsHistory.has(pair.civilian));
+  if (unusedWords.length === 0) {
+    usedWordsHistory.clear();
+    unusedWords = [...wordList];
+  }
+
+  const defaultPair = unusedWords[Math.floor(Math.random() * unusedWords.length)];
+  usedWordsHistory.add(defaultPair.civilian);
+
   const selectedImpostors = parseInt(impostorCountSelect.value, 10);
   const noClueMode = noClueToggle.checked;
 
   const impostorIndices = new Set();
-
-  // SPECIAL / TROLL ROUND PROBABILITY SET TO EXACTLY 0.005 (0.5%)
   const isSpecialRound = Math.random() < 0.005;
   let isTrollRound = false;
 
@@ -414,6 +438,7 @@ function revealImpostors() {
 
 function resetToSetup() {
   audio.playClick();
+  isGameInProgress = false; // I-off ang Refresh Guard kapag bumalik sa setup
   resultsScreen.classList.add('hidden');
   setupScreen.classList.remove('hidden');
 }
@@ -454,4 +479,4 @@ function triggerConfetti() {
   }
 
   render();
-                  }
+}
