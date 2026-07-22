@@ -1,5 +1,5 @@
 /**
- * Imposter Who? - With Pass-The-Phone Privacy Shield
+ * Imposter Who? - Core Game Logic
  */
 
 class SoundController {
@@ -28,10 +28,15 @@ class SoundController {
       gain.connect(this.ctx.destination);
       osc.start();
       osc.stop(this.ctx.currentTime + duration);
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e); 
+    }
   }
 
-  playClick() { this.playTone(600, 0.05, 'triangle'); }
+  playClick() { 
+    this.playTone(600, 0.05, 'triangle'); 
+  }
+  
   playReveal() { 
     this.playTone(400, 0.1, 'sine');
     setTimeout(() => this.playTone(800, 0.2, 'sine'), 100);
@@ -46,7 +51,6 @@ let players = [];
 let assignedRoles = [];
 let currentRevealIndex = 0;
 let isGameInProgress = false;
-
 let usedWordsHistory = new Set();
 
 // DOM Elements
@@ -66,7 +70,6 @@ const startGameBtn = document.getElementById('start-game-btn');
 const noClueToggle = document.getElementById('no-clue-toggle');
 
 const nextUpPlayerName = document.getElementById('next-up-player-name');
-const confirmPlayerBtnName = document.getElementById('confirm-player-btn-name');
 const confirmPassBtn = document.getElementById('confirm-pass-btn');
 
 const currentPlayerName = document.getElementById('current-player-name');
@@ -107,7 +110,7 @@ async function fetchWords() {
     categoriesData = await res.json();
     populateCategories();
   } catch (e) {
-    console.error('Error loading JSON data:', e);
+    console.error('Error loading word data:', e);
   }
 }
 
@@ -116,7 +119,7 @@ function populateCategories() {
   
   const allOpt = document.createElement('option');
   allOpt.value = "ALL";
-  allOpt.textContent = "✨ All Categories Combined";
+  allOpt.textContent = "All Categories";
   categorySelect.appendChild(allOpt);
 
   Object.keys(categoriesData).forEach(cat => {
@@ -256,7 +259,6 @@ function startGame() {
 function showPrivacyPassScreen() {
   const currentPlayer = assignedRoles[currentRevealIndex];
   nextUpPlayerName.textContent = currentPlayer.name;
-  confirmPlayerBtnName.textContent = currentPlayer.name;
   
   revealScreen.classList.add('hidden');
   privacyScreen.classList.remove('hidden');
@@ -305,7 +307,7 @@ function updateRevealCard() {
   totalPlayersIndex.textContent = assignedRoles.length;
   
   if (currentRevealIndex === assignedRoles.length - 1) {
-    nextPlayerBtn.textContent = "Start Discussion";
+    nextPlayerBtn.textContent = "Start Game";
   } else {
     nextPlayerBtn.textContent = "Next Player";
   }
@@ -353,7 +355,7 @@ function showResults() {
     row.innerHTML = `
       <div>
         <strong>${r.name}</strong>
-        <div style="font-size: 0.8rem; color: #64748b; font-weight: 600;">Word: ${r.word}</div>
+        <div style="font-size: 0.85rem; color: #64748b; font-weight: 600;">Word: ${r.word}</div>
       </div>
       <span class="role-badge ${roleClass}">${roleText}</span>
     `;
@@ -381,14 +383,14 @@ function triggerConfetti() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 
-  const particles = Array.from({ length: 80 }).map(() => ({
+  const particles = Array.from({ length: 60 }).map(() => ({
     x: canvas.width / 2,
     y: canvas.height / 2,
-    vx: (Math.random() - 0.5) * 12,
-    vy: (Math.random() - 0.5) * 12 - 4,
-    color: `hsl(${Math.random() * 360}, 100%, 50%)`,
-    size: Math.random() * 6 + 4,
-    life: 100
+    vx: (Math.random() - 0.5) * 10,
+    vy: (Math.random() - 0.5) * 10 - 3,
+    color: `hsl(${Math.random() * 360}, 80%, 60%)`,
+    size: Math.random() * 5 + 3,
+    life: 80
   }));
 
   function render() {
