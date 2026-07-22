@@ -20,6 +20,7 @@
 
     <section id="setup-screen" class="card-screen">
       <div class="setup-scroll-area">
+        
         <div class="section-card">
           <div class="section-header-row">
             <label class="section-title">✋ PLAYERS (<span id="player-count-label">0</span>)</label>
@@ -39,9 +40,10 @@
         <div class="section-card">
           <label class="section-title">🥷 IMPOSTERS</label>
           <select id="impostor-count-select" class="custom-select">
-            <option value="1" selected>1 Imposter</option>
-            <option value="2">2 Imposters</option>
-            <option value="3">3 Imposters</option>
+            <option value="1" selected>1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
           </select>
         </div>
 
@@ -49,11 +51,20 @@
           <div class="toggle-row">
             <div>
               <label class="section-title">💡 NO-CLUE MODE</label>
-              <p class="section-desc">Impostors see "???" instead of a clue word.</p>
             </div>
             <input type="checkbox" id="no-clue-toggle" class="toggle-switch">
           </div>
         </div>
+
+        <div class="section-card">
+          <div class="toggle-row">
+            <div>
+              <label class="section-title">😜 TROLL MODE</label>
+            </div>
+            <input type="checkbox" id="troll-mode-toggle" class="toggle-switch" checked>
+          </div>
+        </div>
+
       </div>
 
       <div class="bottom-actions">
@@ -66,47 +77,72 @@
         PLAYER <span id="current-player-index">1</span> OF <span id="total-players-index">4</span>
       </div>
 
-      <div id="hold-card" class="hold-card-container">
-        <div class="hold-card-front">
-          <h2 id="current-player-name" class="player-title">PLAYER</h2>
-          <p class="hold-subtext">Do not tell the word to other players.</p>
-          <div class="hold-icon-wrapper">
-            <span class="hold-icon">👆</span>
+      <div id="hold-card-wrapper" class="hold-card-wrapper">
+        <div id="hold-card-inner" class="hold-card-inner">
+          <div class="hold-card-front">
+            <h2 id="current-player-name" class="player-title">PLAYER</h2>
+            <p class="hold-subtext">Keep your word secret!</p>
+            <div class="hold-icon-wrapper">
+              <span class="hold-icon">👆</span>
+            </div>
+            <p class="hold-instruction">HOLD TO REVEAL</p>
           </div>
-          <p class="hold-instruction">HOLD TO REVEAL</p>
-        </div>
-        
-        <div id="hold-card-back" class="hold-card-back hidden">
-          <p class="word-label">Your secret word is:</p>
-          <h3 id="secret-word-display">WORD</h3>
+          
+          <div class="hold-card-back">
+            <p class="word-label">Your secret word is:</p>
+            <h3 id="secret-word-display">WORD</h3>
+          </div>
         </div>
       </div>
 
-      <button id="next-player-btn" class="btn start-btn hidden">Next Player</button>
+      <div class="bottom-actions visibility-hidden">
+        <button id="next-player-btn" class="btn start-btn">Next Player</button>
+      </div>
     </section>
 
     <section id="starter-screen" class="card-screen hidden">
-      <div class="hold-card-container starter-card">
-        <h2 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 8px;">SPEAKER DECIDED!</h2>
-        <p class="hold-subtext" style="margin-bottom: 16px;">Starts the conversation first:</p>
-        <h1 id="starter-player-name" class="player-title" style="font-size: 2.8rem; color: #1e293b;">-</h1>
+      <div class="starter-card">
+        <h2 class="card-subtitle">Game Started</h2>
+        <p class="hold-subtext">Starts the conversation first:</p>
+        <h1 id="starter-player-name" class="player-title display-name">-</h1>
       </div>
 
-      <button id="proceed-btn" class="btn start-btn">Continue to Summary</button>
+      <div class="bottom-actions">
+        <button id="proceed-btn" class="btn start-btn">Continue</button>
+      </div>
     </section>
 
     <section id="results-screen" class="card-screen hidden">
-      <h2 style="font-weight: 900; color: #1e293b; text-align: center;">GAME SUMMARY</h2>
       
-      <button id="show-impostor-btn" class="btn reveal-impostor-btn">🔍 SHOW IMPOSTOR</button>
-      
-      <div id="results-summary" class="results-container hidden"></div>
-      
-      <button id="new-game-btn" class="btn start-btn" style="margin-top: 15px;">Play Again</button>
+      <div id="results-card-wrapper" class="hold-card-wrapper">
+        <div id="results-card-inner" class="hold-card-inner">
+          
+          <div class="hold-card-front classified-front">
+            <div class="classified-stamp">TOP SECRET</div>
+            <p class="hold-subtext" style="color: #000; margin-top: 12px;">Game Over!</p>
+            <p class="hold-instruction">TAP BUTTON BELOW TO REVEAL</p>
+          </div>
+          
+          <div class="hold-card-back results-back">
+            <div id="impostor-names-display" class="impostor-names-list">
+              </div>
+            
+            <div class="divider-line"></div>
+            
+            <p class="word-label">SECRET WORD</p>
+            <h3 id="civilian-word-display" class="revealed-word-text">WORD</h3>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="bottom-actions">
+        <button id="show-impostor-btn" class="btn start-btn">🔍 SHOW IMPOSTOR</button>
+        <button id="new-game-btn" class="btn start-btn hidden">Play Again</button>
+      </div>
     </section>
   </div>
 
-  <canvas id="confetti-canvas"></canvas>
   <script src="script.js"></script>
 </body>
 </html>
